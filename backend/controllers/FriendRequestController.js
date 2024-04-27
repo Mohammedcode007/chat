@@ -14,7 +14,7 @@ exports.sendFriendRequest = async (req, res) => {
         // Check if the request already exists
         const existingRequest = await FriendRequest.findOne({ sender: senderId, receiver: receiverId });
         if (existingRequest) {
-            return res.status(200).json({ message: 'Friend request already sent', existingRequest,sender });
+            return res.status(200).json({ message: 'Friend request already sent', existingRequest, sender });
         }
 
         // Check if the users exist
@@ -22,6 +22,11 @@ exports.sendFriendRequest = async (req, res) => {
 
         if (!sender || !receiver) {
             return res.status(404).json({ message: 'Sender or receiver not found' });
+        }
+
+        // Check if receiver is already in the friend list
+        if (sender.friends.includes(receiverId)) {
+            return res.status(200).json({ message: 'User is already a friend', sender });
         }
 
         // Create the friend request using the model
@@ -37,7 +42,7 @@ exports.sendFriendRequest = async (req, res) => {
         io.emit('friendRequestSent', request);
 
         // Sending the sender data along with the response
-        res.status(200).json({ message: 'Friend request sent successfully', sender, request });
+        res.status(200).json({ message: 'Friend request sent successfully', sender, request, requestId: request._id });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -61,11 +66,15 @@ exports.getFriendRequests = async (req, res) => {
         // Emit event with updated friend requests data
         io.emit('friendRequestsUpdate', friendRequests);
 
-        res.status(200).json(friendRequests);
+        // Extracting _id from each friend request and constructing the response
+        const response = friendRequests.map(request => ({ ...request.toJSON(), requestId: request._id }));
+
+        res.status(200).json(response);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 
 exports.respondToFriendRequest = async (req, res) => {

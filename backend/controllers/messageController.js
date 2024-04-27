@@ -45,6 +45,8 @@ exports.createMessage = async (req, res) => {
 
         // Add the new message to the conversation
         conversation.messages.push(newMessage._id);
+        conversation.lastMessage = newMessage._id;
+
         await conversation.save();
 
         res.status(201).json(newMessage);
@@ -148,49 +150,23 @@ exports.messageReceived = async (req, res) => {
     }
 };
 
-exports.deleteConversation = async (req, res) => {
-    const conversationId = req.query.id; // Assuming the conversation ID is provided in the request parameters
 
-    try {
-        // Find the conversation by ID
-        const conversation = await Conversation.findById(conversationId);
-        if (!conversation) {
-            return res.status(404).json({ message: 'Conversation not found' });
-        }
-
-        // Delete all associated messages
-        await Message.deleteMany({ conversation: conversationId });
-
-        // Delete the conversation itself
-        await Conversation.deleteOne({ _id: conversationId });
-
-        res.json({ message: 'Conversation deleted successfully' });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
 
 
 
 exports.markMessageDelivered = async (req, res) => {
-    const { messageId } = req.params; // Assume the message ID is provided in the request parameters
-
+    const { recipientId } = req.body; // نفترض أن معرف المستلم موجود في معلمات الطلب
+console.log(recipientId);
     try {
-        // Find the message by ID
-        const message = await Message.findById(messageId);
+        // تحديث جميع الرسائل التي تم إرسالها للمستلم والتي لم تُسلم بعد لتصبح مُسلمة
+        await Message.updateMany({ recipient: recipientId, delivered: false }, { $set: { delivered: true } });
 
-        if (!message) {
-            return res.status(404).json({ message: 'Message not found' });
-        }
-
-        // Update the "delivered" status to true
-        await Message.updateOne({ _id: messageId }, { $set: { delivered: true } });
-
-        res.json({ message: 'Message marked as delivered' });
+        res.json({ message: 'تم تحديد جميع الرسائل كمستلمة' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
+
 
 exports.markMessageSeen = async (req, res) => {
     const { messageId } = req.query; // Assume the message ID is provided in the request parameters

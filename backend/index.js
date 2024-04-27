@@ -6,12 +6,18 @@ const { Server } = require("socket.io");
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const authRoutes = require('./routes/authRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+
 const userRoutes = require('./routes/userRoutes');
 const requestRoutes = require('./routes/FriendRequestRoutes');
 const messageRoutes = require('./routes/messageRouter');
+const conversation = require('./routes/ConversationRoutes');
+
+
 const path = require('path');
 
-const cors = require('cors'); // Import cors package
+const cors = require('cors');
 
 dotenv.config();
 const app = express();
@@ -28,29 +34,43 @@ mongoose.connect(process.env.MONGODB_URI,)
 
 // Enable CORS
 app.use(cors());
-
+app.use(express.static("public"))
 // Use user routes
+app.use('/api/auth', authRoutes);
+app.use('/api/room', roomRoutes);
+
 app.use('/api/users', userRoutes);
 app.use('/api/request', requestRoutes);
 app.use('/api/message', messageRoutes);
+app.use('/api/conversation', conversation);
 
 
 // Socket.IO logic
 io.on('connection', (socket) => {
-console.log('Socket connected:', socket.id);
-socket.on("friendRequestSent",(data)=>{
-socket.emit("friendRequestRecive",data)
-})
+    console.log('Socket connected:', socket.id);
+    socket.on("friendRequestSent", (data) => {
+        io.emit("friendRequestRecive", data)
+    })
+    socket.on("editParticipantsStatusSent", (data) => {
+        console.log(data, '7777');
 
-socket.on('sendMessage', (messageData) => {
-    // Broadcast the message to all connected clients
-    io.emit('receiveMessage', messageData);
-});
+        io.emit("editParticipantsStatusRecive", data)
+    })
 
-socket.on('friendLogin', (userData) => {
-    // Broadcast the message to all connected clients
-    io.emit('receiveUpdateFriends', userData);
-});
+    socket.on("SendUpdateFriends", (data) => {
+        console.log(data, '88858');
+        io.emit("ReceiveUpdateFriends", data)
+    })
+
+    socket.on('sendMessage', (messageData) => {
+        // Broadcast the message to all connected clients
+        io.emit('receiveMessage', messageData);
+    });
+
+    socket.on('friendLogin', (userData) => {
+        // Broadcast the message to all connected clients
+        io.emit('receiveUpdateFriends', userData);
+    });
 
     // Listen for disconnection
     socket.on('disconnect', () => {
