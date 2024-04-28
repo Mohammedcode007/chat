@@ -52,7 +52,6 @@ io.on('connection', (socket) => {
         io.emit("friendRequestRecive", data)
     })
     socket.on("editParticipantsStatusSent", (data) => {
-        console.log(data, '7777');
 
         io.emit("editParticipantsStatusRecive", data)
     })

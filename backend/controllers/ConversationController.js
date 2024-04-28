@@ -122,7 +122,7 @@ exports.sendMessage = async (req, res) => {
 
 
 exports.editParticipantsStatus = async (req, res) => {
-    const { conversationId, userId, isOpen } = req.body; // Assuming the conversation ID is provided in the request parameters
+    const { conversationId, userId, isOpen,isTyping } = req.body; // Assuming the conversation ID is provided in the request parameters
 
     try {
         // Find the conversation by its ID
@@ -140,6 +140,7 @@ exports.editParticipantsStatus = async (req, res) => {
 
         // Update isOpen for the existing participant
         participantStatus.isOpen = isOpen;
+        participantStatus.isTyping = isTyping;
 
         // Save the conversation
         await conversation.save();
